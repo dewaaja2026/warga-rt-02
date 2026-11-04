@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warga RT 02 / RW 05 - Pesona Griya Indah</title>
+    
+    <!-- PWA Manifest & Ikon -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <!-- Tailwind CSS & FontAwesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0b1329',
+                        cardBg: '#16223f',
+                        cardHover: '#1e2e54',
+                        accentBlue: '#38bdf8',
+                        accentOrange: '#f59e0b'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-darkBg text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- Header -->
+    <header class="bg-[#111c38] border-b border-slate-800 sticky top-0 z-30 shadow-lg">
+        <div class="max-w-xl mx-auto px-4 py-3.5 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-sky-600 text-white p-2.5 rounded-xl shadow font-bold text-base flex items-center justify-center">
+                    <i class="fa-solid fa-house"></i>
+                </div>
+                <div>
+                    <h1 class="text-base font-bold leading-tight text-white">Pesona Griya Indah RT 02</h1>
+                    <p class="text-[11px] text-slate-400">Sirnabaya, Telukjambe Timur, Karawang</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button id="installBtn" class="hidden bg-amber-500 text-slate-900 text-xs font-bold px-2.5 py-2 rounded-xl shadow hover:bg-amber-400 transition flex items-center space-x-1" title="Install Aplikasi">
+                    <i class="fa-solid fa-download"></i>
+                </button>
+                <button onclick="openModal()" class="bg-sky-600 text-white p-2.5 rounded-xl shadow hover:bg-sky-500 transition flex items-center justify-center" title="Tambah Warga">
+                    <i class="fa-solid fa-user-plus text-sm"></i>
+                </button>
+                <button onclick="openSettings()" class="bg-[#1e2e54] text-slate-300 p-2.5 rounded-xl shadow hover:bg-[#253867] transition flex items-center justify-center" title="Pengaturan Data">
+                    <i class="fa-solid fa-gear text-sm"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-xl w-full mx-auto px-4 py-4 space-y-4">
+
+        <!-- Search & Filter Card -->
+        <div class="bg-cardBg border border-slate-800 rounded-2xl p-4 shadow-md space-y-3">
+            <div class="relative">
+                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                </span>
+                <input type="text" id="searchInput" placeholder="Cari No Rumah (mis: D5-11, D5) atau Nama..." 
+                    class="w-full pl-10 pr-4 py-2.5 bg-[#0f172a] border border-slate-700 rounded-xl text-xs text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 transition">
+            </div>
+
+            <div class="relative">
+                <select id="filterBlock" onchange="applyFilters()" class="w-full px-3.5 py-2.5 bg-[#0f172a] border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 transition appearance-none cursor-pointer">
+                    <option value="ALL">Semua Blok (D2 - D7)</option>
+                    <option value="D2">Blok D2</option>
+                    <option value="D3">Blok D3</option>
+                    <option value="D4">Blok D4</option>
+                    <option value="D5">Blok D5</option>
+                    <option value="D6">Blok D6</option>
+                    <option value="D7">Blok D7</option>
+                </select>
+                <span class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                    <i class="fa-solid fa-chevron-down text-xs"></i>
+                </span>
+            </div>
+
+            <div class="flex justify-between items-center text-[11px] text-slate-400 pt-1 px-1">
+                <span id="resultInfo">Menampilkan 0 data warga</span>
+                <div class="flex space-x-3">
+                    <button onclick="exportData()" class="hover:text-sky-400 transition flex items-center space-x-1">
+                        <i class="fa-solid fa-file-export"></i>
+                        <span>Ekspor JSON</span>
+                    </button>
+                    <button onclick="document.getElementById('importFile').click()" class="hover:text-sky-400 transition flex items-center space-x-1">
+                        <i class="fa-solid fa-file-import"></i>
+                        <span>Impor</span>
+                    </button>
+                    <input type="file" id="importFile" accept=".json" class="hidden" onchange="importData(event)">
+                </div>
+            </div>
+        </div>
+
+        <!-- Result List -->
+        <div class="space-y-3" id="residentList">
+            <!-- Dynamically populated -->
+        </div>
+    </main>
+
+    <!-- Modal Add / Edit Resident -->
+    <div id="residentModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-cardBg border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 id="modalTitle" class="font-bold text-slate-100 text-sm">Tambah Warga Baru</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+            
+            <form id="residentForm" onsubmit="saveResident(event)" class="space-y-3.5">
+                <input type="hidden" id="editIndex" value="-1">
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-400 mb-1">Blok Rumah</label>
+                        <select id="inputBlok" required class="w-full p-2.5 bg-[#0f172a] border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            <option value="D2">D2</option>
+                            <option value="D3">D3</option>
+                            <option value="D4">D4</option>
+                            <option value="D5">D5</option>
+                            <option value="D6">D6</option>
+                            <option value="D7">D7</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-400 mb-1">Nomor Rumah</label>
+                        <input type="number" id="inputNomor" required min="1" placeholder="Contoh: 18" 
+                            class="w-full p-2.5 bg-[#0f172a] border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-400 mb-1">Nama Pemilik / Penghuni Rumah</label>
+                    <input type="text" id="inputNama" placeholder="Kosongkan jika rumah kosong" 
+                        class="w-full p-2.5 bg-[#0f172a] border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <p class="text-[10px] text-slate-500 mt-1">Biarkan kosong untuk mencatat rumah kosong.</p>
+                </div>
+
+                <div class="border-t border-slate-800 pt-3 space-y-3">
+                    <label class="block text-xs font-bold text-sky-400"><i class="fa-solid fa-map-pin mr-1"></i> Koordinat GPS Rumah (Opsional)</label>
+                    <p class="text-[10px] text-slate-400 leading-relaxed">
+                        Masukkan koordinat GPS persis (contoh: <code>-6.31234, 107.30123</code>) agar peta langsung menunjuk ke rumah ini.
+                    </p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-400 mb-1">Latitude (Lintang)</label>
+                            <input type="text" id="inputLat" placeholder="Contoh: -6.312345" 
+                                class="w-full p-2.5 bg-[#0f172a] border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-400 mb-1">Longitude (Bujur)</label>
+                            <input type="text" id="inputLng" placeholder="Contoh: 107.301234" 
+                                class="w-full p-2.5 bg-[#0f172a] border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-2 flex space-x-3">
+                    <button type="button" onclick="closeModal()" class="flex-1 bg-[#1e2e54] text-slate-300 py-2.5 rounded-xl text-xs font-semibold hover:bg-[#253867] transition">Batal</button>
+                    <button type="submit" class="flex-1 bg-sky-600 text-white py-2.5 rounded-xl text-xs font-semibold hover:bg-sky-500 transition shadow-sm">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Google Maps -->
+    <div id="mapModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-cardBg border border-slate-800 rounded-2xl max-w-lg w-full p-5 shadow-2xl space-y-3.5">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-map-location-dot text-sky-400"></i>
+                    <h3 id="mapModalTitle" class="font-bold text-slate-100 text-sm">Lokasi Rumah</h3>
+                </div>
+                <button onclick="closeMapModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-3">
+                <div class="w-full h-60 rounded-xl overflow-hidden border border-slate-800 bg-[#0f172a]">
+                    <iframe id="googleMapIframe" class="w-full h-full border-0" loading="lazy" src=""></iframe>
+                </div>
+                <div class="flex justify-between items-center pt-1">
+                    <p class="text-[11px] text-slate-400" id="mapModalAddress">Pesona Griya Indah, Sirnabaya, Karawang</p>
+                    <a id="openMapsExternal" href="#" target="_blank" class="bg-sky-600 text-white text-[11px] px-3.5 py-2 rounded-xl font-semibold hover:bg-sky-500 transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-diamond-turn-right"></i>
+                        <span>Buka di Google Maps</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-[#111c38] border-t border-slate-800 py-3 mt-auto text-center text-[11px] text-slate-400">
+        <p>Pesona Griya Indah RT 02 / RW 05 &bull; Progressive Web App</p>
+    </footer>
+
+    <!-- Script Logic -->
+    <script>
+        // Pendaftaran Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then((reg) => console.log('Service Worker terdaftar:', reg.scope))
+                    .catch((err) => console.log('Gagal mendaftarkan Service Worker:', err));
+            });
+        }
+
+        const defaultResidents = [
+            { blok: "D2", nomor_rumah: 13, alamat: "D2-13", nama_warga: "Sriyanto", lat: "", lng: "" },
+            { blok: "D2", nomor_rumah: 14, alamat: "D2-14", nama_warga: "Wisnu Cahyono", lat: "", lng: "" },
+            { blok: "D2", nomor_rumah: 15, alamat: "D2-15", nama_warga: "Rachmat Hidayat", lat: "", lng: "" },
+            { blok: "D2", nomor_rumah: 16, alamat: "D2-16", nama_warga: "Iman Suhadi", lat: "", lng: "" },
+            { blok: "D2", nomor_rumah: 17, alamat: "D2-17", nama_warga: "Hendy Prabowo", lat: "", lng: "" },
+            { blok: "D2", nomor_rumah: 18, alamat: "D2-18", nama_warga: "Yudi R", lat: "", lng: "" },
+            { blok: "D2", nomor_rumah: 21, alamat: "D2-21", nama_warga: "Raden Slamet", lat: "", lng: "" },
+            { blok: "D3", nomor_rumah: 2, alamat: "D3-2", nama_warga: "Yuli", lat: "", lng: "" },
+            { blok: "D3", nomor_rumah: 4, alamat: "D3-4", nama_warga: "Triyono", lat: "", lng: "" },
+            { blok: "D3", nomor_rumah: 6, alamat: "D3-6", nama_warga: "M. Iron Taqiolla", lat: "", lng: "" },
+            { blok: "D3", nomor_rumah: 7, alamat: "D3-7", nama_warga: "Rizki", lat: "", lng: "" },
+            { blok: "D3", nomor_rumah: 8, alamat: "D3-8", nama_warga: "Sumulyo", lat: "", lng: "" },
+            { blok: "D3", nomor_rumah: 9, alamat: "D3-9", nama_warga: "Khairul", lat: "", lng: "" },
+            { blok: "D3", nomor_rumah: 10, alamat: "D3-10", nama_warga: "Ari Heryawan", lat: "", lng: "" },
+            { blok: "D3", nomor_rumah: 11, alamat: "D3-11", nama_warga: "Ari H.", lat: "", lng: "" },
+            { blok: "D3", nomor_rumah: 13, alamat: "D3-13", nama_warga: "Tri Sugiyanto", lat: "", lng: "" },
+            { blok: "D3", nomor_rumah: 14, alamat: "D3-14", nama_warga: "Iwan K", lat: "", lng: "" },
+            { blok: "D4", nomor_rumah: 1, alamat: "D4-1", nama_warga: "Catur", lat: "", lng: "" },
+            { blok: "D4", nomor_rumah: 2, alamat: "D4-2", nama_warga: "Arief Budimasyah", lat: "", lng: "" },
+            { blok: "D4", nomor_rumah: 3, alamat: "D4-3", nama_warga: "Adi Pramono", lat: "", lng: "" },
+            { blok: "D4", nomor_rumah: 7, alamat: "D4-7", nama_warga: "Ahmad Djamhari", lat: "", lng: "" },
+            { blok: "D4", nomor_rumah: 8, alamat: "D4-8", nama_warga: "Andi Gunawan", lat: "", lng: "" },
+            { blok: "D4", nomor_rumah: 10, alamat: "D4-10", nama_warga: "Eko Winarto", lat: "", lng: "" },
+            { blok: "D4", nomor_rumah: 11, alamat: "D4-11", nama_warga: "Dedi Suprianto", lat: "", lng: "" },
+            { blok: "D4", nomor_rumah: 15, alamat: "D4-15", nama_warga: "Didit Setiawan", lat: "", lng: "" },
+            { blok: "D4", nomor_rumah: 16, alamat: "D4-16", nama_warga: "Faisal", lat: "", lng: "" },
+            { blok: "D4", nomor_rumah: 17, alamat: "D4-17", nama_warga: "Rahardian Rafik", lat: "", lng: "" },
+            { blok: "D4", nomor_rumah: 19, alamat: "D4-19", nama_warga: "Sutopo", lat: "", lng: "" },
+            { blok: "D4", nomor_rumah: 20, alamat: "D4-20", nama_warga: "Kiki Supriyadi", lat: "", lng: "" },
+            { blok: "D5", nomor_rumah: 1, alamat: "D5-1", nama_warga: "Riyadi", lat: "", lng: "" },
+            { blok: "D5", nomor_rumah: 3, alamat: "D5-3", nama_warga: "Yogi", lat: "", lng: "" },
+            { blok: "D5", nomor_rumah: 4, alamat: "D5-4", nama_warga: "Agus Triono", lat: "", lng: "" },
+            { blok: "D5", nomor_rumah: 5, alamat: "D5-5", nama_warga: "Novian Ikhsanto", lat: "", lng: "" },
+            { blok: "D5", nomor_rumah: 6, alamat: "D5-6", nama_warga: "Fadhillah", lat: "", lng: "" },
+            { blok: "D5", nomor_rumah: 7, alamat: "D5-7", nama_warga: "Dawud", lat: "", lng: "" },
+            { blok: "D5", nomor_rumah: 9, alamat: "D5-9", nama_warga: "Agus Thamrin", lat: "", lng: "" },
+            { blok: "D5", nomor_rumah: 10, alamat: "D5-10", nama_warga: "M Nur Fuat", lat: "", lng: "" },
+            { blok: "D5", nomor_rumah: 11, alamat: "D5-11", nama_warga: "James Bagariang", lat: "", lng: "" },
+            { blok: "D5", nomor_rumah: 12, alamat: "D5-12", nama_warga: "Saipul", lat: "", lng: "" },
+            { blok: "D6", nomor_rumah: 1, alamat: "D6-1", nama_warga: "Ismail", lat: "", lng: "" },
+            { blok: "D6", nomor_rumah: 2, alamat: "D6-2", nama_warga: "Jarot Nugroho", lat: "", lng: "" },
+            { blok: "D6", nomor_rumah: 4, alamat: "D6-4", nama_warga: "Eko S N", lat: "", lng: "" },
+            { blok: "D6", nomor_rumah: 5, alamat: "D6-5", nama_warga: "Ivan Tri Brahmanto", lat: "", lng: "" },
+            { blok: "D6", nomor_rumah: 6, alamat: "D6-6", nama_warga: "Tomy", lat: "", lng: "" },
+            { blok: "D6", nomor_rumah: 8, alamat: "D6-8", nama_warga: "Waluyo", lat: "", lng: "" },
+            { blok: "D6", nomor_rumah: 9, alamat: "D6-9", nama_warga: "Ade Nursadi", lat: "", lng: "" },
+            { blok: "D6", nomor_rumah: 11, alamat: "D6-11", nama_warga: "Teguh Adrian", lat: "", lng: "" },
+            { blok: "D6", nomor_rumah: 12, alamat: "D6-12", nama_warga: "Bambang S", lat: "", lng: "" },
+            { blok: "D6", nomor_rumah: 13, alamat: "D6-13", nama_warga: "Harry Purnomo", lat: "", lng: "" },
+            { blok: "D6", nomor_rumah: 15, alamat: "D6-15", nama_warga: "Deni Sutisna", lat: "", lng: "" },
+            { blok: "D6", nomor_rumah: 16, alamat: "D6-16", nama_warga: "Edison Siregar", lat: "", lng: "" },
+            { blok: "D6", nomor_rumah: 17, alamat: "D6-17", nama_warga: "Gunawan S", lat: "", lng: "" },
+            { blok: "D7", nomor_rumah: 1, alamat: "D7-1", nama_warga: "Hasan", lat: "", lng: "" },
+            { blok: "D7", nomor_rumah: 2, alamat: "D7-2", nama_warga: "Deny Alamsyah", lat: "", lng: "" },
+            { blok: "D7", nomor_rumah: 3, alamat: "D7-3", nama_warga: "Henis Subagja", lat: "", lng: "" },
+            { blok: "D7", nomor_rumah: 4, alamat: "D7-4", nama_warga: "Jimmi Kundayang", lat: "", lng: "" },
+            { blok: "D7", nomor_rumah: 7, alamat: "D7-7", nama_warga: "Oki Dwika Rachman", lat: "", lng: "" },
+            { blok: "D7", nomor_rumah: 9, alamat: "D7-9", nama_warga: "Yaya Mulyana", lat: "", lng: "" },
+            { blok: "D7", nomor_rumah: 10, alamat: "D7-10", nama_warga: "Deni Adiar", lat: "", lng: "" },
+            { blok: "D7", nomor_rumah: 11, alamat: "D7-11", nama_warga: "Ruherdiana", lat: "", lng: "" },
+            { blok: "D7", nomor_rumah: 12, alamat: "D7-12", nama_warga: "KMS M. Ihsan", lat: "", lng: "" }
+        ];
+
+        let residents = JSON.parse(localStorage.getItem('rt02_residents_pwa_v2')) || defaultResidents;
+
+        function saveToLocalStorage() {
+            localStorage.setItem('rt02_residents_pwa_v2', JSON.stringify(residents));
+        }
+
+        function renderResidents(listToRender = residents) {
+            const container = document.getElementById('residentList');
+            const resultInfo = document.getElementById('resultInfo');
+            
+            resultInfo.innerText = `Menampilkan ${listToRender.length} data warga`;
+
+            if (listToRender.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-cardBg border border-slate-800 rounded-2xl p-8 text-center text-slate-400 text-xs">
+                        <i class="fa-solid fa-folder-open text-2xl mb-2 text-slate-500"></i>
+                        <p>Tidak ada data warga yang ditemukan.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = listToRender.map((r) => {
+                const realIndex = residents.findIndex(item => item.alamat === r.alamat);
+                const isEmpty = !r.nama_warga || r.nama_warga.trim() === "";
+                const nameDisplay = isEmpty ? '<span class="text-slate-400 italic font-normal">[Rumah Kosong / Belum Terdata]</span>' : `<span class="font-bold text-slate-100">${r.nama_warga}</span>`;
+                const gpsBadge = (r.lat && r.lng) ? '<span class="text-[9px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-1.5 py-0.5 rounded ml-1.5"><i class="fa-solid fa-location-crosshairs"></i> GPS Akurat</span>' : '';
+                
+                return `
+                    <div class="bg-cardBg border border-slate-800 hover:border-slate-700 rounded-2xl p-4 shadow-md transition flex items-center justify-between group">
+                        <div class="flex items-center space-x-3.5 cursor-pointer flex-grow" onclick="openMap('${r.alamat}')">
+                            <div class="w-14 h-12 rounded-xl bg-[#0f172a] border border-slate-700 text-sky-400 flex flex-col items-center justify-center font-bold text-xs flex-shrink-0 shadow-inner">
+                                <span class="text-[10px] text-slate-400 uppercase leading-none">${r.blok}</span>
+                                <span class="text-xs mt-0.5">No.${r.nomor_rumah}</span>
+                            </div>
+                            <div>
+                                <div class="text-xs text-slate-200 flex items-center flex-wrap">${nameDisplay} ${gpsBadge}</div>
+                                <div class="text-[11px] text-slate-400 mt-0.5">Blok ${r.blok} No.${r.nomor_rumah} &bull; Pesona Griya Indah RT 02</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-1 flex-shrink-0 pl-2">
+                            <button onclick="openMap('${r.alamat}')" title="Buka Google Maps" class="p-2 text-slate-400 hover:text-sky-400 hover:bg-[#0f172a] rounded-xl transition">
+                                <i class="fa-solid fa-map-pin text-xs"></i>
+                            </button>
+                            <button onclick="editResident(${realIndex})" title="Edit Data & Koordinat GPS" class="p-2 text-slate-400 hover:text-amber-400 hover:bg-[#0f172a] rounded-xl transition">
+                                <i class="fa-solid fa-pen-to-square text-xs"></i>
+                            </button>
+                            <button onclick="deleteResident(${realIndex})" title="Hapus Data" class="p-2 text-slate-400 hover:text-rose-400 hover:bg-[#0f172a] rounded-xl transition">
+                                <i class="fa-solid fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function applyFilters() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            const selectedBlock = document.getElementById('filterBlock').value;
+
+            let filtered = residents.filter(r => {
+                const matchBlock = selectedBlock === 'ALL' || r.blok === selectedBlock;
+                const matchSearch = r.alamat.toLowerCase().includes(query) || 
+                                    r.nomor_rumah.toString().includes(query) || 
+                                    r.nama_warga.toLowerCase().includes(query) ||
+                                    r.blok.toLowerCase().includes(query);
+                return matchBlock && matchSearch;
+            });
+
+            renderResidents(filtered);
+        }
+
+        document.getElementById('searchInput').addEventListener('input', applyFilters);
+
+        function openModal(editIdx = -1) {
+            const modal = document.getElementById('residentModal');
+            const title = document.getElementById('modalTitle');
+            document.getElementById('residentForm').reset();
+            document.getElementById('editIndex').value = editIdx;
+
+            if (editIdx >= 0) {
+                title.innerText = "Edit Data & Koordinat Warga";
+                const r = residents[editIdx];
+                document.getElementById('inputBlok').value = r.blok;
+                document.getElementById('inputNomor').value = r.nomor_rumah;
+                document.getElementById('inputNama').value = r.nama_warga;
+                document.getElementById('inputLat').value = r.lat || '';
+                document.getElementById('inputLng').value = r.lng || '';
+            } else {
+                title.innerText = "Tambah Warga Baru";
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('residentModal').classList.add('hidden');
+        }
+
+        function saveResident(e) {
+            e.preventDefault();
+            const editIdx = parseInt(document.getElementById('editIndex').value);
+            const blok = document.getElementById('inputBlok').value;
+            const nomor_rumah = parseInt(document.getElementById('inputNomor').value);
+            const nama_warga = document.getElementById('inputNama').value.trim();
+            const lat = document.getElementById('inputLat').value.trim();
+            const lng = document.getElementById('inputLng').value.trim();
+            const alamat = `${blok}-${nomor_rumah}`;
+
+            if (editIdx >= 0) {
+                residents[editIdx] = { blok, nomor_rumah, alamat, nama_warga, lat, lng };
+            } else {
+                const existing = residents.findIndex(r => r.alamat === alamat);
+                if (existing >= 0) {
+                    residents[existing].nama_warga = nama_warga;
+                    residents[existing].lat = lat;
+                    residents[existing].lng = lng;
+                } else {
+                    residents.push({ blok, nomor_rumah, alamat, nama_warga, lat, lng });
+                    residents.sort((a, b) => {
+                        if (a.blok !== b.blok) return a.blok.localeCompare(b.blok);
+                        return a.nomor_rumah - b.nomor_rumah;
+                    });
+                }
+            }
+
+            saveToLocalStorage();
+            closeModal();
+            applyFilters();
+        }
+
+        function editResident(index) {
+            openModal(index);
+        }
+
+        function deleteResident(index) {
+            if (confirm(`Apakah Anda yakin ingin menghapus data ${residents[index].alamat}?`)) {
+                residents.splice(index, 1);
+                saveToLocalStorage();
+                applyFilters();
+            }
+        }
+
+        function openMap(alamat) {
+            const modal = document.getElementById('mapModal');
+            const iframe = document.getElementById('googleMapIframe');
+            const modalAddress = document.getElementById('mapModalAddress');
+            const externalLink = document.getElementById('openMapsExternal');
+            
+            const r = residents.find(item => item.alamat === alamat);
+            document.getElementById('mapModalTitle').innerText = `Lokasi Rumah ${alamat}`;
+            
+            let query = "";
+            if (r && r.lat && r.lng) {
+                query = `${r.lat},${r.lng}`;
+                modalAddress.innerText = `Koordinat GPS Persis: ${r.lat}, ${r.lng} (Pesona Griya Indah)`;
+            } else {
+                query = `Pesona Griya Indah Blok ${alamat} Sirnabaya Karawang`;
+                modalAddress.innerText = `Pesona Griya Indah, Blok ${alamat}, Karawang (Belum ada GPS spesifik)`;
+            }
+            
+            iframe.src = `https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=&z=18&ie=UTF8&iwloc=&output=embed`;
+            externalLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+            
+            modal.classList.remove('hidden');
+        }
+
+        function closeMapModal() {
+            document.getElementById('mapModal').classList.add('hidden');
+            document.getElementById('googleMapIframe').src = '';
+        }
+
+        function openSettings() {
+            alert("Pengaturan Data:\n- Gunakan Ekspor/Impor JSON untuk mencadangkan data.\n- Anda dapat memasukkan titik koordinat GPS pada menu Edit.");
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(residents, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", "data_warga_pesona_griya_indah.json");
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+        }
+
+        function importData(event) {
+            const fileReader = new FileReader();
+            if (event.target.files[0]) {
+                fileReader.readAsText(event.target.files[0], "UTF-8");
+                fileReader.onload = (e) => {
+                    try {
+                        const imported = JSON.parse(e.target.result);
+                        if (Array.isArray(imported)) {
+                            residents = imported;
+                            saveToLocalStorage();
+                            applyFilters();
+                            alert("Data berhasil diimpor!");
+                        } else {
+                            alert("Format file JSON tidak valid.");
+                        }
+                    } catch (err) {
+                        alert("Gagal membaca file JSON.");
+                    }
+                };
+            }
+        }
+
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const installBtn = document.getElementById('installBtn');
+            installBtn.classList.remove('hidden');
+
+            installBtn.addEventListener('click', () => {
+                installBtn.classList.add('hidden');
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    deferredPrompt = null;
+                });
+            });
+        });
+
+        applyFilters();
+    </script>
+</body>
+</html>
